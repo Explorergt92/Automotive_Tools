@@ -1,35 +1,36 @@
-import os
-import requests
+
 import zipfile
 from io import BytesIO
+import requests
+import matplotlib.pyplot as plt
 
-url = 'https://static.nhtsa.gov/odi/ffdd/rcl/FLAT_RCL.zip'
+URL = 'https://static.nhtsa.gov/odi/ffdd/rcl/FLAT_RCL.zip'
 
 print("Downloading file...")
-response = requests.get(url, timeout=30)
+response = requests.get(URL, timeout=30)
 zip_content = BytesIO(response.content)
 
 print("Unzipping file...")
 with zipfile.ZipFile(zip_content, 'r') as zip_ref:
     zip_ref.extractall(".")
 
-file_name = 'FLAT_RCL.txt'
-
 specified_brands = [
     "ACURA", "ALFA ROMEO", "ASTON MARTIN", "AUDI", "BMW", "BENTLEY MOTORS",
-    "BUGATTI", "BUICK", "CADILLAC", "CHEVROLET", "CHRYSLER", "DODGE", "FERRARI",
-    "FIAT", "FISKER", "FORD", "GMC", "GENESIS", "HONDA", "HUMMER", "HYUNDAI",
-    "INEOS", "INFINITI", "JAGUAR", "JEEP", "KARMA", "KIA", "LAMBORGHINI",
-    "LAND ROVER", "LEXUS", "LINCOLN", "LOTUS", "LUCID MOTORS", "MASERATI",
-    "MAYBACH", "MAZDA", "MCLAREN", "MERCEDES-AMG", "MERCEDES-BENZ", "MERCEDES-MAYBACH", "MERCURY",
-    "MINI", "MITSUBISHI", "NISSAN", "OLDSMOBILE", "POLESTAR", "PONTIAC", "PORSCHE",
-    "PLYMOUTH", "RAM", "RIVIAN", "ROLLS-ROYCE", "SAAB", "SATURN", "SCION", "SMART",
-    "SUBARU", "SUZUKI", "TESLA", "TOYOTA", "VOLKSWAGEN", "VOLVO"
+    "BUGATTI", "BUICK", "CADILLAC", "CHEVROLET", "CHRYSLER", "DODGE",
+    "FERRARI", "FIAT", "FISKER", "FORD", "GMC", "GENESIS", "HONDA",
+    "HUMMER", "HYUNDAI", "INEOS", "INFINITI", "JAGUAR", "JEEP",
+    "KARMA", "KIA", "LAMBORGHINI", "LAND ROVER", "LEXUS", "LINCOLN",
+    "LOTUS", "LUCID MOTORS", "MASERATI", "MAZDA", "MCLAREN",
+    "MERCEDES-BENZ", "MERCEDES-MAYBACH", "MERCURY", "MINI",
+    "MITSUBISHI", "NISSAN", "OLDSMOBILE", "POLESTAR", "PONTIAC",
+    "PORSCHE", "PLYMOUTH", "RAM", "RIVIAN", "ROLLS-ROYCE", "SAAB",
+    "SATURN", "SCION", "SMART", "SUBARU", "SUZUKI", "TESLA", "TOYOTA",
+    "VOLKSWAGEN", "VOLVO"
 ]
 
 recall_counts = {brand: 0 for brand in specified_brands}
 
-with open('FLAT_RCL.txt', 'r') as file:
+with open('FLAT_RCL.txt', 'r', encoding='utf-8') as file:
     for line in file:
         parts = line.split('\t')
         automaker = parts[2].upper()
@@ -39,11 +40,24 @@ with open('FLAT_RCL.txt', 'r') as file:
 
 recall_counts = {brand: count for brand, count in recall_counts.items() if count > 0}
 
-if recall_counts:
-    least_recalls = min(recall_counts, key=recall_counts.get)
-    print(f"The automaker with the least recalls is {least_recalls} with {recall_counts[least_recalls]} recalls.")
-else:
-    print("No recalls found for the specified brands.")
+RESULTS_FILENAME = 'recall_counts.txt'
+with open(RESULTS_FILENAME, 'w', encoding='utf-8') as results_file:
+    for automaker, count in sorted(recall_counts.items(), key=lambda item: item[1]):
+        results_file.write(f"{automaker}: {count}\n")
+    print(f"Results saved to {RESULTS_FILENAME}")
 
-for automaker, count in sorted(recall_counts.items(), key=lambda item: item[1]):
-    print(f"{automaker}: {count}")
+sorted_recall_counts = dict(sorted(recall_counts.items(), key=lambda item: item[1]))
+automakers = list(sorted_recall_counts.keys())
+recall_counts_values = list(sorted_recall_counts.values())
+
+plt.figure(figsize=(10, 8))
+plt.barh(automakers, recall_counts_values, color='skyblue')
+plt.xlabel('Number of Recalls')
+plt.ylabel('Automaker')
+plt.title('Recall Counts by Automaker')
+plt.tight_layout()
+
+plt.savefig('recalls_bar_graph.png')
+print("Bar graph saved as 'recalls_bar_graph.png'")
+
+plt.show()
